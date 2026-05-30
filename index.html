@@ -19,6 +19,7 @@
 
       <nav class="nav-list" aria-label="Main sections">
         <a href="#dashboard" class="active">Dashboard</a>
+        <a href="#add-transaction">Add Transaction</a>
         <a href="#transactions">Transactions</a>
         <a href="#budgets">Budgets</a>
         <a href="#planning">Planning</a>
@@ -31,6 +32,7 @@
     </aside>
 
     <main>
+      <!-- Dashboard Section -->
       <section id="dashboard" class="hero-band">
         <div>
           <p class="eyebrow">Personal finance tracker</p>
@@ -71,7 +73,25 @@
       </section>
 
       <section class="workspace-grid">
-        <section class="panel" aria-labelledby="transactionFormTitle">
+        <section class="panel analytics-panel" aria-labelledby="analyticsTitle">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Analyze</p>
+              <h3 id="analyticsTitle">Spending intelligence</h3>
+            </div>
+            <select id="monthInput" aria-label="Select month"></select>
+          </div>
+
+          <div class="chart-wrap">
+            <canvas id="trendChart" width="720" height="300" aria-label="Income and expense trend chart"></canvas>
+          </div>
+          <div id="insightsList" class="insight-list"></div>
+        </section>
+      </section>
+
+      <!-- Add Transaction Section -->
+      <section id="add-transaction" class="page-section hidden">
+        <section class="panel full-width-panel" aria-labelledby="transactionFormTitle">
           <div class="panel-header">
             <div>
               <p class="eyebrow">Capture</p>
@@ -128,74 +148,73 @@
               <textarea id="noteInput" name="note" rows="3" placeholder="Optional context"></textarea>
             </label>
 
-            <button class="primary-btn" type="submit">Add transaction</button>
+            <div class="form-actions">
+              <button class="primary-btn" type="submit">Add transaction</button>
+              <a href="#dashboard" class="ghost-btn">Cancel</a>
+            </div>
           </form>
         </section>
+      </section>
 
-        <section class="panel analytics-panel" aria-labelledby="analyticsTitle">
-          <div class="panel-header">
+      <!-- Transactions Section -->
+      <section id="transactions" class="page-section hidden">
+        <section class="panel wide-panel" aria-labelledby="transactionListTitle">
+          <div class="panel-header stackable">
             <div>
-              <p class="eyebrow">Analyze</p>
-              <h3 id="analyticsTitle">Spending intelligence</h3>
+              <p class="eyebrow">Review</p>
+              <h3 id="transactionListTitle">Transactions</h3>
             </div>
-            <select id="monthInput" aria-label="Select month"></select>
+            <div class="filter-bar" aria-label="Transaction filters">
+              <input id="searchInput" type="search" placeholder="Search title, note, account">
+              <select id="typeFilter" aria-label="Filter by type">
+                <option value="all">All types</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+              </select>
+              <select id="categoryFilter" aria-label="Filter by category">
+                <option value="all">All categories</option>
+              </select>
+            </div>
           </div>
-
-          <div class="chart-wrap">
-            <canvas id="trendChart" width="720" height="300" aria-label="Income and expense trend chart"></canvas>
-          </div>
-          <div id="insightsList" class="insight-list"></div>
+          <div id="transactionList" class="transaction-list"></div>
         </section>
       </section>
 
-      <section id="transactions" class="panel wide-panel" aria-labelledby="transactionListTitle">
-        <div class="panel-header stackable">
-          <div>
-            <p class="eyebrow">Review</p>
-            <h3 id="transactionListTitle">Transactions</h3>
-          </div>
-          <div class="filter-bar" aria-label="Transaction filters">
-            <input id="searchInput" type="search" placeholder="Search title, note, account">
-            <select id="typeFilter" aria-label="Filter by type">
-              <option value="all">All types</option>
-              <option value="income">Income</option>
-              <option value="expense">Expense</option>
-            </select>
-            <select id="categoryFilter" aria-label="Filter by category">
-              <option value="all">All categories</option>
-            </select>
-          </div>
-        </div>
-        <div id="transactionList" class="transaction-list"></div>
+      <!-- Budgets Section -->
+      <section id="budgets" class="page-section hidden">
+        <section class="workspace-grid lower-grid">
+          <section class="panel" aria-labelledby="budgetTitle">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Control</p>
+                <h3 id="budgetTitle">Budget health</h3>
+              </div>
+            </div>
+            <div id="budgetList" class="budget-list"></div>
+          </section>
+        </section>
       </section>
 
-      <section id="budgets" class="workspace-grid lower-grid">
-        <section class="panel" aria-labelledby="budgetTitle">
-          <div class="panel-header">
-            <div>
-              <p class="eyebrow">Control</p>
-              <h3 id="budgetTitle">Budget health</h3>
+      <!-- Planning Section -->
+      <section id="planning" class="page-section hidden">
+        <section class="workspace-grid lower-grid">
+          <section class="panel" aria-labelledby="planningTitle">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Plan</p>
+                <h3 id="planningTitle">Goals and recurring bills</h3>
+              </div>
             </div>
-          </div>
-          <div id="budgetList" class="budget-list"></div>
-        </section>
-
-        <section id="planning" class="panel" aria-labelledby="planningTitle">
-          <div class="panel-header">
-            <div>
-              <p class="eyebrow">Plan</p>
-              <h3 id="planningTitle">Goals and recurring bills</h3>
+            <div class="goal-card">
+              <div>
+                <span>Savings goal</span>
+                <strong id="goalProgressLabel">0%</strong>
+              </div>
+              <div class="progress-track" aria-hidden="true"><span id="goalProgressBar"></span></div>
+              <small id="goalNote">Add income and expenses to calculate progress.</small>
             </div>
-          </div>
-          <div class="goal-card">
-            <div>
-              <span>Savings goal</span>
-              <strong id="goalProgressLabel">0%</strong>
-            </div>
-            <div class="progress-track" aria-hidden="true"><span id="goalProgressBar"></span></div>
-            <small id="goalNote">Add income and expenses to calculate progress.</small>
-          </div>
-          <div id="recurringList" class="recurring-list"></div>
+            <div id="recurringList" class="recurring-list"></div>
+          </section>
         </section>
       </section>
     </main>
