@@ -56,10 +56,14 @@ const els = {
   note: document.querySelector("#noteInput"),
   clearForm: document.querySelector("#clearFormBtn"),
   month: document.querySelector("#monthInput"),
+  monthlyIncomeInput: document.querySelector("#monthlyIncomeInput"),
+  saveIncomeBtn: document.querySelector("#saveIncomeBtn"),
+  currentMonthLabel: document.querySelector("#currentMonthLabel"),
   search: document.querySelector("#searchInput"),
   typeFilter: document.querySelector("#typeFilter"),
   categoryFilter: document.querySelector("#categoryFilter"),
   transactionList: document.querySelector("#transactionList"),
+  recentTransactionList: document.querySelector("#recentTransactionList"),
   budgetList: document.querySelector("#budgetList"),
   recurringList: document.querySelector("#recurringList"),
   insightsList: document.querySelector("#insightsList"),
@@ -87,7 +91,7 @@ function loadState() {
     return {
       transactions: demoTransactions,
       budgets: defaultBudgets,
-      monthlySavingsGoal: 12000
+      monthlyIncome: 0
     };
   }
 
@@ -96,13 +100,13 @@ function loadState() {
     return {
       transactions: Array.isArray(parsed.transactions) ? parsed.transactions : demoTransactions,
       budgets: parsed.budgets || defaultBudgets,
-      monthlySavingsGoal: Number(parsed.monthlySavingsGoal) || 12000
+      monthlyIncome: Number(parsed.monthlyIncome) || 0
     };
   } catch {
     return {
       transactions: demoTransactions,
       budgets: defaultBudgets,
-      monthlySavingsGoal: 12000
+      monthlyIncome: 0
     };
   }
 }
@@ -172,6 +176,13 @@ function populateMonths() {
     ? months.map((month) => `<option value="${month}">${monthLabel(month)}</option>`).join("")
     : `<option value="${currentMonth()}">${monthLabel(currentMonth())}</option>`;
   els.month.value = months.includes(activeMonth) ? activeMonth : els.month.options[0].value;
+  
+  updateCurrentMonthLabel();
+}
+
+function updateCurrentMonthLabel() {
+  const selectedMonth = getSelectedMonth();
+  els.currentMonthLabel.textContent = monthLabel(selectedMonth);
 }
 
 function resetForm() {
@@ -192,7 +203,14 @@ function renderStats() {
   const expenses = sumTransactions(monthTransactions, "expense");
   const balance = allIncome - allExpenses;
   const savings = income - expenses;
-  const savingsRate = income > 0 ? Math.round((savings / income) * 100) : 0;
+  
+  // Calculate savings rate based on user's set monthly income
+  let savingsRate = 0;
+  if (state.monthlyIncome > 0) {
+    savingsRate = Math.round((savings / state.monthlyIncome) * 100);
+  } else if (income > 0) {
+    savingsRate = Math.round((savings / income) * 100);
+  }
 
   els.balanceValue.textContent = formatCurrency(balance);
   els.incomeValue.textContent = formatCurrency(income);
@@ -201,12 +219,23 @@ function renderStats() {
   els.balanceNote.textContent = `${state.transactions.length} total transactions`;
   els.incomeNote.textContent = monthLabel(month);
   els.expenseNote.textContent = `${monthTransactions.filter((item) => item.type === "expense").length} expenses`;
-  els.savingsNote.textContent = savingsRate >= 30 ? "Excellent momentum" : "Try to reach 30%";
+  els.savingsNote.textContent = savingsRate >= 30 ? "Excellent momentum" : "Work towards 30%";
 
-  const goalPercent = state.monthlySavingsGoal > 0 ? Math.max(0, Math.min(100, Math.round((savings / state.monthlySavingsGoal) * 100))) : 0;
-  els.goalProgressLabel.textContent = `${goalPercent}%`;
-  els.goalProgressBar.style.width = `${goalPercent}%`;
-  els.goalNote.textContent = `${formatCurrency(Math.max(savings, 0))} saved toward ${formatCurrency(state.monthlySavingsGoal)} this month.`;
+  // Savings amount
+  els.goalProgressLabel.textContent = formatCurrency(Math.max(savings, 0));
+  
+  // Progress bar calculation
+  let progressPercent = 0;
+  if (state.monthlyIncome > 0) {
+    progressPercent = Math.max(0, Math.min(100, Math.round((savings / state.monthlyIncome) * 100)));
+  }
+  els.goalProgressBar.style.width = `${progressPercent}%`;
+  
+  if (state.monthlyIncome > 0) {
+    els.goalNote.textContent = `${formatCurrency(Math.max(savings, 0))} saved. Target: ${formatCurrency(state.monthlyIncome)}`;
+  } else {
+    els.goalNote.textContent = "Set your monthly income to track savings progress.";
+  }
 }
 
 function renderTransactions() {
@@ -245,6 +274,32 @@ function renderTransactions() {
         <button class="mini-btn" type="button" data-edit="${transaction.id}">Edit</button>
         <button class="icon-btn" type="button" title="Delete transaction" aria-label="Delete transaction" data-delete="${transaction.id}">x</button>
       </div>
+    </article>
+  `).join("");
+}
+
+function renderRecentTransactions() {
+  const recent = [...state.transactions]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 5);
+
+  if (!recent.length) {
+    els.recentTransactionList.innerHTML = "";
+    els.recentTransactionList.append(els.emptyTemplate.content.cloneNode(true));
+    return;
+  }
+
+  els.recentTransactionList.innerHTML = recent.map((transaction) => `
+    <article class="transaction-item" data-id="${transaction.id}">
+      <div class="transaction-main">
+        <strong>${escapeHtml(transaction.title)}</strong>
+        <div class="transaction-meta">
+          <span>${transaction.date}</span>
+          <span>${escapeHtml(transaction.category)}</span>
+          <span>${escapeHtml(transaction.account)}</span>
+        </div>
+      </div>
+      <span class="amount ${transaction.type}">${transaction.type === "income" ? "+" : "-"}${formatCurrency(transaction.amount)}</span>
     </article>
   `).join("");
 }
@@ -485,6 +540,16 @@ function editTransaction(id) {
   document.querySelector("#transactionFormTitle").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function saveMonthlyIncome() {
+  const income = Number(els.monthlyIncomeInput.value);
+  if (income >= 0) {
+    state.monthlyIncome = income;
+    saveState();
+    renderAll();
+    els.monthlyIncomeInput.value = "";
+  }
+}
+
 function exportState() {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -506,7 +571,7 @@ function importState(file) {
       state = {
         transactions: parsed.transactions,
         budgets: parsed.budgets || defaultBudgets,
-        monthlySavingsGoal: Number(parsed.monthlySavingsGoal) || 12000
+        monthlyIncome: Number(parsed.monthlyIncome) || 0
       };
       saveState();
       renderAll();
@@ -541,6 +606,7 @@ function renderAll() {
   populateMonths();
   renderStats();
   renderTransactions();
+  renderRecentTransactions();
   renderBudgets();
   renderRecurring();
   renderInsights();
@@ -551,7 +617,16 @@ function bindEvents() {
   els.type.addEventListener("change", populateCategoryOptions);
   els.form.addEventListener("submit", addOrUpdateTransaction);
   els.clearForm.addEventListener("click", resetForm);
-  els.month.addEventListener("change", renderAll);
+  els.month.addEventListener("change", () => {
+    updateCurrentMonthLabel();
+    renderAll();
+  });
+  els.saveIncomeBtn.addEventListener("click", saveMonthlyIncome);
+  els.monthlyIncomeInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      saveMonthlyIncome();
+    }
+  });
   els.search.addEventListener("input", renderTransactions);
   els.typeFilter.addEventListener("change", renderTransactions);
   els.categoryFilter.addEventListener("change", renderTransactions);
@@ -559,9 +634,10 @@ function bindEvents() {
     state = {
       transactions: demoTransactions.map((transaction) => ({ ...transaction, id: crypto.randomUUID() })),
       budgets: defaultBudgets,
-      monthlySavingsGoal: 12000
+      monthlyIncome: 50000
     };
     saveState();
+    els.monthlyIncomeInput.value = state.monthlyIncome;
     renderAll();
   });
   els.exportBtn.addEventListener("click", exportState);
@@ -582,6 +658,14 @@ function bindEvents() {
     const deleteButton = event.target.closest("[data-delete]");
     if (deleteButton) {
       deleteTransaction(deleteButton.dataset.delete);
+    }
+  });
+
+  els.recentTransactionList.addEventListener("click", (event) => {
+    const editButton = event.target.closest("[data-edit]");
+    if (editButton) {
+      editTransaction(editButton.dataset.edit);
+      return;
     }
   });
 
