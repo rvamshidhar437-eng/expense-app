@@ -51,30 +51,54 @@
         </section>
 
         <div class="dashboard-header">
-          <h3>Financial Summary</h3>
+          <div>
+            <h3>Financial Summary</h3>
+            <p class="header-subtitle">Month of <span id="currentMonthLabel">May 2026</span></p>
+          </div>
           <select id="monthInput" aria-label="Select month" class="month-selector"></select>
         </div>
 
+        <section class="income-setup-card">
+          <div class="income-setup-content">
+            <div>
+              <p class="income-label">Set your monthly income</p>
+              <p class="income-hint">Enter your expected monthly income to calculate accurate savings rates</p>
+            </div>
+            <div class="income-input-group">
+              <span class="currency-symbol">₹</span>
+              <input 
+                id="monthlyIncomeInput" 
+                type="number" 
+                min="0" 
+                step="0.01" 
+                placeholder="Enter your monthly income"
+                class="income-input"
+              >
+              <button id="saveIncomeBtn" class="primary-btn" type="button">Save</button>
+            </div>
+          </div>
+        </section>
+
         <section class="stats-grid" aria-label="Financial summary">
           <article class="stat-card">
-            <span>Balance</span>
+            <span>Total Balance</span>
             <strong id="balanceValue">₹0</strong>
-            <small id="balanceNote">No activity yet</small>
+            <small id="balanceNote">All transactions</small>
           </article>
           <article class="stat-card">
-            <span>Monthly income</span>
+            <span>Monthly Income</span>
             <strong id="incomeValue">₹0</strong>
             <small id="incomeNote">Current month</small>
           </article>
           <article class="stat-card">
-            <span>Monthly spending</span>
+            <span>Monthly Spending</span>
             <strong id="expenseValue">₹0</strong>
             <small id="expenseNote">Current month</small>
           </article>
           <article class="stat-card accent">
-            <span>Savings rate</span>
+            <span>Savings Rate</span>
             <strong id="savingsValue">0%</strong>
-            <small id="savingsNote">Goal: 30%+</small>
+            <small id="savingsNote">Based on your income</small>
           </article>
         </section>
 
@@ -102,11 +126,11 @@
             </div>
             <div class="goal-card">
               <div>
-                <span>Monthly savings goal</span>
-                <strong id="goalProgressLabel">0%</strong>
+                <span>Monthly savings</span>
+                <strong id="goalProgressLabel">₹0</strong>
               </div>
               <div class="progress-track" aria-hidden="true"><span id="goalProgressBar"></span></div>
-              <small id="goalNote">Add income and expenses to calculate progress.</small>
+              <small id="goalNote">Difference between income and spending</small>
             </div>
             <div id="recurringList" class="recurring-list"></div>
           </section>
