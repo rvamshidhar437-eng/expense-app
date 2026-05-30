@@ -455,6 +455,7 @@ function addOrUpdateTransaction(event) {
 
   saveState();
   resetForm();
+  navigateToPage("dashboard");
   renderAll();
 }
 
@@ -480,6 +481,7 @@ function editTransaction(id) {
   els.date.value = transaction.date;
   els.note.value = transaction.note || "";
   els.form.querySelector(".primary-btn").textContent = "Update transaction";
+  navigateToPage("add-transaction");
   document.querySelector("#transactionFormTitle").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -513,6 +515,26 @@ function importState(file) {
     }
   };
   reader.readAsText(file);
+}
+
+function navigateToPage(pageId) {
+  document.querySelectorAll(".page-section").forEach((section) => {
+    section.classList.add("hidden");
+  });
+  
+  const targetPage = document.getElementById(pageId);
+  if (targetPage) {
+    targetPage.classList.remove("hidden");
+  }
+
+  document.querySelectorAll(".nav-list a").forEach((link) => {
+    link.classList.remove("active");
+  });
+  
+  const activeLink = document.querySelector(`a[href="#${pageId}"]`);
+  if (activeLink) {
+    activeLink.classList.add("active");
+  }
 }
 
 function renderAll() {
@@ -562,7 +584,18 @@ function bindEvents() {
       deleteTransaction(deleteButton.dataset.delete);
     }
   });
+
+  document.querySelectorAll(".nav-list a").forEach((link) => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      const pageId = link.getAttribute("href").slice(1);
+      navigateToPage(pageId);
+    });
+  });
+
   window.addEventListener("resize", renderChart);
+
+  navigateToPage("dashboard");
 }
 
 populateCategoryOptions();
