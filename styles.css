@@ -175,6 +175,32 @@ main {
   max-width: 100%;
 }
 
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.dashboard-header h3 {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.28rem;
+}
+
+.month-selector,
+.budget-month-input,
+.planning-month-input {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
 .hero-band {
   min-height: 258px;
   display: grid;
@@ -269,6 +295,17 @@ main {
 
 .ghost-btn:hover {
   background: var(--surface-2);
+}
+
+.inline-link {
+  color: var(--teal);
+  text-decoration: none;
+  font-weight: 700;
+  transition: color 180ms ease;
+}
+
+.inline-link:hover {
+  color: var(--teal-dark);
 }
 
 .file-action input {
@@ -652,6 +689,11 @@ canvas {
   .insight-list {
     grid-template-columns: 1fr;
   }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: 680px) {
@@ -696,5 +738,14 @@ canvas {
   .nav-list {
     grid-auto-flow: row;
     overflow-x: visible;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .month-selector {
+    width: 100%;
   }
 }
