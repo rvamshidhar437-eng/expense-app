@@ -189,6 +189,12 @@ main {
   font-size: 1.28rem;
 }
 
+.header-subtitle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .month-selector,
 .budget-month-input,
 .planning-month-input {
@@ -199,6 +205,61 @@ main {
   border-radius: var(--radius);
   font-size: 0.9rem;
   cursor: pointer;
+}
+
+.income-setup-card {
+  background: linear-gradient(135deg, #E0F7FA 0%, #E1F5FE 100%);
+  border: 1px solid rgba(0, 217, 255, 0.2);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 217, 255, 0.08);
+}
+
+.income-setup-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.income-label {
+  margin: 0 0 4px;
+  color: var(--primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.income-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.income-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: fit-content;
+}
+
+.currency-symbol {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.income-input {
+  width: 180px;
+  padding: 10px 12px !important;
+  border: 1px solid var(--teal) !important;
+  background: white !important;
+  color: var(--primary) !important;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.income-input::placeholder {
+  color: var(--muted);
 }
 
 .hero-band {
@@ -275,6 +336,7 @@ main {
   text-decoration: none;
   display: inline-grid;
   place-items: center;
+  white-space: nowrap;
 }
 
 .primary-btn:hover {
@@ -694,6 +756,21 @@ canvas {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .income-setup-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .income-input-group {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .income-input {
+    width: 100% !important;
+    flex: 1 1 100%;
+  }
 }
 
 @media (max-width: 680px) {
@@ -747,5 +824,19 @@ canvas {
 
   .month-selector {
     width: 100%;
+  }
+
+  .income-setup-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .income-input-group {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .income-input {
+    width: 100% !important;
   }
 }
