@@ -1,0 +1,20 @@
+{
+  "name": "expense-app",
+  "version": "1.0.0",
+  "description": "Smart Expense Tracker - Personal finance tracking app",
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "echo 'No build step required for vanilla HTML/JS app'"
+  },
+  "keywords": [
+    "expense-tracker",
+    "finance",
+    "budgeting"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@vercel/analytics": "^1.1.1"
+  }
+}
