@@ -33,59 +33,94 @@
 
     <main>
       <!-- Dashboard Section -->
-      <section id="dashboard" class="hero-band">
-        <div>
-          <p class="eyebrow">Personal finance tracker</p>
-          <h2>Know where your money goes before the month gets away.</h2>
-          <p class="hero-copy">Track income, spending, budgets, recurring bills, savings goals, and category trends in one fast local app.</p>
-        </div>
-        <div class="quick-actions" aria-label="Quick actions">
-          <button id="seedDemoBtn" class="ghost-btn" type="button">Load demo</button>
-          <button id="exportBtn" class="ghost-btn" type="button">Export JSON</button>
-          <label class="file-action">
-            Import JSON
-            <input id="importInput" type="file" accept="application/json">
-          </label>
-        </div>
-      </section>
+      <section id="dashboard" class="page-section">
+        <section class="hero-band">
+          <div>
+            <p class="eyebrow">Personal finance tracker</p>
+            <h2>Know where your money goes before the month gets away.</h2>
+            <p class="hero-copy">Track income, spending, budgets, recurring bills, savings goals, and category trends in one fast local app.</p>
+          </div>
+          <div class="quick-actions" aria-label="Quick actions">
+            <button id="seedDemoBtn" class="ghost-btn" type="button">Load demo</button>
+            <button id="exportBtn" class="ghost-btn" type="button">Export JSON</button>
+            <label class="file-action">
+              Import JSON
+              <input id="importInput" type="file" accept="application/json">
+            </label>
+          </div>
+        </section>
 
-      <section class="stats-grid" aria-label="Financial summary">
-        <article class="stat-card">
-          <span>Balance</span>
-          <strong id="balanceValue">₹0</strong>
-          <small id="balanceNote">No activity yet</small>
-        </article>
-        <article class="stat-card">
-          <span>Monthly income</span>
-          <strong id="incomeValue">₹0</strong>
-          <small id="incomeNote">Current month</small>
-        </article>
-        <article class="stat-card">
-          <span>Monthly spending</span>
-          <strong id="expenseValue">₹0</strong>
-          <small id="expenseNote">Current month</small>
-        </article>
-        <article class="stat-card accent">
-          <span>Savings rate</span>
-          <strong id="savingsValue">0%</strong>
-          <small id="savingsNote">Goal: 30%+</small>
-        </article>
-      </section>
+        <div class="dashboard-header">
+          <h3>Financial Summary</h3>
+          <select id="monthInput" aria-label="Select month" class="month-selector"></select>
+        </div>
 
-      <section class="workspace-grid">
-        <section class="panel analytics-panel" aria-labelledby="analyticsTitle">
+        <section class="stats-grid" aria-label="Financial summary">
+          <article class="stat-card">
+            <span>Balance</span>
+            <strong id="balanceValue">₹0</strong>
+            <small id="balanceNote">No activity yet</small>
+          </article>
+          <article class="stat-card">
+            <span>Monthly income</span>
+            <strong id="incomeValue">₹0</strong>
+            <small id="incomeNote">Current month</small>
+          </article>
+          <article class="stat-card">
+            <span>Monthly spending</span>
+            <strong id="expenseValue">₹0</strong>
+            <small id="expenseNote">Current month</small>
+          </article>
+          <article class="stat-card accent">
+            <span>Savings rate</span>
+            <strong id="savingsValue">0%</strong>
+            <small id="savingsNote">Goal: 30%+</small>
+          </article>
+        </section>
+
+        <section class="workspace-grid">
+          <section class="panel analytics-panel" aria-labelledby="analyticsTitle">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Analyze</p>
+                <h3 id="analyticsTitle">Spending intelligence</h3>
+              </div>
+            </div>
+
+            <div class="chart-wrap">
+              <canvas id="trendChart" width="720" height="300" aria-label="Income and expense trend chart"></canvas>
+            </div>
+            <div id="insightsList" class="insight-list"></div>
+          </section>
+
+          <section class="panel" aria-labelledby="savingsGoalTitle">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Track</p>
+                <h3 id="savingsGoalTitle">Savings progress</h3>
+              </div>
+            </div>
+            <div class="goal-card">
+              <div>
+                <span>Monthly savings goal</span>
+                <strong id="goalProgressLabel">0%</strong>
+              </div>
+              <div class="progress-track" aria-hidden="true"><span id="goalProgressBar"></span></div>
+              <small id="goalNote">Add income and expenses to calculate progress.</small>
+            </div>
+            <div id="recurringList" class="recurring-list"></div>
+          </section>
+        </section>
+
+        <section class="panel wide-panel" aria-labelledby="recentTransactionsTitle">
           <div class="panel-header">
             <div>
-              <p class="eyebrow">Analyze</p>
-              <h3 id="analyticsTitle">Spending intelligence</h3>
+              <p class="eyebrow">Latest</p>
+              <h3 id="recentTransactionsTitle">Recent transactions</h3>
             </div>
-            <select id="monthInput" aria-label="Select month"></select>
+            <a href="#transactions" class="ghost-btn">View all</a>
           </div>
-
-          <div class="chart-wrap">
-            <canvas id="trendChart" width="720" height="300" aria-label="Income and expense trend chart"></canvas>
-          </div>
-          <div id="insightsList" class="insight-list"></div>
+          <div id="recentTransactionList" class="transaction-list"></div>
         </section>
       </section>
 
@@ -162,7 +197,7 @@
           <div class="panel-header stackable">
             <div>
               <p class="eyebrow">Review</p>
-              <h3 id="transactionListTitle">Transactions</h3>
+              <h3 id="transactionListTitle">All transactions</h3>
             </div>
             <div class="filter-bar" aria-label="Transaction filters">
               <input id="searchInput" type="search" placeholder="Search title, note, account">
@@ -189,6 +224,7 @@
                 <p class="eyebrow">Control</p>
                 <h3 id="budgetTitle">Budget health</h3>
               </div>
+              <select id="budgetMonthInput" aria-label="Select month for budget"></select>
             </div>
             <div id="budgetList" class="budget-list"></div>
           </section>
@@ -204,16 +240,17 @@
                 <p class="eyebrow">Plan</p>
                 <h3 id="planningTitle">Goals and recurring bills</h3>
               </div>
+              <select id="planningMonthInput" aria-label="Select month for planning"></select>
             </div>
             <div class="goal-card">
               <div>
                 <span>Savings goal</span>
-                <strong id="goalProgressLabel">0%</strong>
+                <strong id="planningGoalProgressLabel">0%</strong>
               </div>
-              <div class="progress-track" aria-hidden="true"><span id="goalProgressBar"></span></div>
-              <small id="goalNote">Add income and expenses to calculate progress.</small>
+              <div class="progress-track" aria-hidden="true"><span id="planningGoalProgressBar"></span></div>
+              <small id="planningGoalNote">Add income and expenses to calculate progress.</small>
             </div>
-            <div id="recurringList" class="recurring-list"></div>
+            <div id="planningRecurringList" class="recurring-list"></div>
           </section>
         </section>
       </section>
@@ -223,7 +260,7 @@
   <template id="emptyStateTemplate">
     <div class="empty-state">
       <strong>No transactions match this view.</strong>
-      <span>Add a transaction or adjust your filters.</span>
+      <span><a href="#add-transaction" class="inline-link">Add a transaction</a> or adjust your filters.</span>
     </div>
   </template>
 
