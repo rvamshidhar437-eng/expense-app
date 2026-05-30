@@ -69,6 +69,7 @@ button,
   display: flex;
   flex-direction: column;
   gap: 28px;
+  overflow-y: auto;
 }
 
 .brand {
@@ -120,6 +121,7 @@ button,
   text-decoration: none;
   padding: 11px 12px;
   border-radius: var(--radius);
+  transition: all 180ms ease;
 }
 
 .nav-list a:hover,
@@ -154,6 +156,23 @@ main {
   display: grid;
   gap: 20px;
   align-content: start;
+  overflow-y: auto;
+}
+
+.page-section {
+  display: none;
+}
+
+.page-section:not(.hidden) {
+  display: contents;
+}
+
+.page-section.hidden {
+  display: none;
+}
+
+.full-width-panel {
+  max-width: 100%;
 }
 
 .hero-band {
@@ -198,7 +217,8 @@ main {
 
 .quick-actions,
 .filter-bar,
-.field-row {
+.field-row,
+.form-actions {
   display: flex;
   gap: 10px;
 }
@@ -207,6 +227,10 @@ main {
   align-items: center;
   flex-wrap: wrap;
   justify-content: end;
+}
+
+.form-actions {
+  margin-top: 10px;
 }
 
 .primary-btn,
@@ -222,6 +246,9 @@ main {
   background: var(--teal);
   color: var(--primary);
   padding: 0 16px;
+  text-decoration: none;
+  display: inline-grid;
+  place-items: center;
 }
 
 .primary-btn:hover {
@@ -237,6 +264,11 @@ main {
   padding: 0 14px;
   display: inline-grid;
   place-items: center;
+  text-decoration: none;
+}
+
+.ghost-btn:hover {
+  background: var(--surface-2);
 }
 
 .file-action input {
@@ -248,6 +280,11 @@ main {
   background: var(--surface-2);
   border: 1px solid var(--line);
   color: var(--muted);
+}
+
+.icon-btn:hover {
+  background: var(--line);
+  color: var(--primary);
 }
 
 .stats-grid,
@@ -484,6 +521,14 @@ canvas {
   padding: 0 12px;
   font-weight: 800;
   border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.mini-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--teal);
+  color: var(--teal);
 }
 
 .budget-list,
@@ -603,6 +648,10 @@ canvas {
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .insight-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 680px) {
@@ -625,7 +674,8 @@ canvas {
   .field-row,
   .filter-bar,
   .panel-header,
-  .panel-header.stackable {
+  .panel-header.stackable,
+  .form-actions {
     flex-direction: column;
     align-items: stretch;
   }
@@ -641,5 +691,10 @@ canvas {
 
   .amount {
     justify-self: start;
+  }
+
+  .nav-list {
+    grid-auto-flow: row;
+    overflow-x: visible;
   }
 }
