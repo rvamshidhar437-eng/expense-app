@@ -212,11 +212,11 @@ function renderStats() {
   }
 
   els.balanceValue.textContent = formatCurrency(balance);
-  els.incomeValue.textContent = formatCurrency(income);
+  els.incomeValue.textContent = state.monthlyIncome > 0 ? formatCurrency(state.monthlyIncome) : formatCurrency(income);
   els.expenseValue.textContent = formatCurrency(expenses);
   els.savingsValue.textContent = `${Math.max(savingsRate, 0)}%`;
   els.balanceNote.textContent = `${state.transactions.length} total transactions`;
-  els.incomeNote.textContent = monthLabel(month);
+  els.incomeNote.textContent = state.monthlyIncome > 0 ? "Your set income" : monthLabel(month);
   els.expenseNote.textContent = `${monthTransactions.filter((item) => item.type === "expense").length} expenses`;
   els.savingsNote.textContent = savingsRate >= 30 ? "Excellent momentum" : "Work towards 30%";
 
@@ -542,8 +542,8 @@ function saveMonthlyIncome() {
   if (income >= 0) {
     state.monthlyIncome = income;
     saveState();
-    renderAll();
     els.monthlyIncomeInput.value = "";
+    renderAll();
   }
 }
 
