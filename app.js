@@ -204,7 +204,6 @@ function renderStats() {
   const balance = allIncome - allExpenses;
   const savings = income - expenses;
   
-  // Calculate savings rate based on user's set monthly income
   let savingsRate = 0;
   if (state.monthlyIncome > 0) {
     savingsRate = Math.round((savings / state.monthlyIncome) * 100);
@@ -221,10 +220,8 @@ function renderStats() {
   els.expenseNote.textContent = `${monthTransactions.filter((item) => item.type === "expense").length} expenses`;
   els.savingsNote.textContent = savingsRate >= 30 ? "Excellent momentum" : "Work towards 30%";
 
-  // Savings amount
   els.goalProgressLabel.textContent = formatCurrency(Math.max(savings, 0));
   
-  // Progress bar calculation
   let progressPercent = 0;
   if (state.monthlyIncome > 0) {
     progressPercent = Math.max(0, Math.min(100, Math.round((savings / state.monthlyIncome) * 100)));
