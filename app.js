@@ -201,7 +201,10 @@ function renderStats() {
   const allExpenses = sumTransactions(state.transactions, "expense");
   const income = sumTransactions(monthTransactions, "income");
   const expenses = sumTransactions(monthTransactions, "expense");
-  const balance = allIncome - allExpenses;
+  
+  // Include set monthly income in total balance
+  const totalIncome = state.monthlyIncome > 0 ? allIncome + state.monthlyIncome : allIncome;
+  const balance = totalIncome - allExpenses;
   const savings = income - expenses;
   
   let savingsRate = 0;
