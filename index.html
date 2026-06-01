@@ -32,6 +32,18 @@
     </aside>
 
     <main>
+      <div class="top-bar">
+        <button id="themeToggle" class="theme-toggle" title="Toggle dark mode">🌙</button>
+        <div class="keyboard-shortcuts">
+          <span title="Ctrl+N: New Transaction">Ctrl+N</span>
+          <span title="Ctrl+S: Export">Ctrl+S</span>
+          <span title="Ctrl+Z: Undo">Ctrl+Z</span>
+          <span title="Ctrl+Y: Redo">Ctrl+Y</span>
+        </div>
+      </div>
+
+      <div id="notificationContainer" class="notification-container"></div>
+
       <!-- Dashboard Section -->
       <section id="dashboard" class="page-section">
         <section class="hero-band">
@@ -75,9 +87,15 @@
                 class="income-input"
               >
               <button id="saveIncomeBtn" class="primary-btn" type="button">Save</button>
+              <button id="editIncomeBtn" class="ghost-btn" type="button">Edit</button>
             </div>
           </div>
         </section>
+
+        <div class="undo-redo-buttons">
+          <button id="undoBtn" class="action-btn" title="Undo (Ctrl+Z)" disabled>↶ Undo</button>
+          <button id="redoBtn" class="action-btn" title="Redo (Ctrl+Y)" disabled>↷ Redo</button>
+        </div>
 
         <section class="stats-grid" aria-label="Financial summary">
           <article class="stat-card">
@@ -107,7 +125,7 @@
             <div class="panel-header">
               <div>
                 <p class="eyebrow">Analyze</p>
-                <h3 id="analyticsTitle">Spending intelligence</h3>
+                <h3 id="analyticsTitle">Spending trends</h3>
               </div>
             </div>
 
@@ -117,6 +135,20 @@
             <div id="insightsList" class="insight-list"></div>
           </section>
 
+          <section class="panel" aria-labelledby="categoryTitle">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Breakdown</p>
+                <h3 id="categoryTitle">Category breakdown</h3>
+              </div>
+            </div>
+            <div class="chart-wrap pie-chart-wrap">
+              <canvas id="pieChart" width="400" height="280" aria-label="Category breakdown pie chart"></canvas>
+            </div>
+          </section>
+        </section>
+
+        <section class="workspace-grid">
           <section class="panel" aria-labelledby="savingsGoalTitle">
             <div class="panel-header">
               <div>
@@ -133,6 +165,16 @@
               <small id="goalNote">Difference between income and spending</small>
             </div>
             <div id="recurringList" class="recurring-list"></div>
+          </section>
+
+          <section class="panel" aria-labelledby="budgetTitle">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Control</p>
+                <h3 id="budgetTitle">Budget overview</h3>
+              </div>
+            </section>
+            <div id="budgetList" class="budget-list"></div>
           </section>
         </section>
 
