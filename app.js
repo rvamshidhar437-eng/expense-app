@@ -1,4 +1,6 @@
 const STORAGE_KEY = "expense-app-state-v1";
+const THEME_KEY = "expense-app-theme";
+const HISTORY_KEY = "expense-app-history";
 
 const categories = {
   expense: ["Food", "Rent", "Transport", "Bills", "Shopping", "Health", "Learning", "Travel", "Other"],
@@ -44,6 +46,8 @@ const recurringBills = [
 
 let state = loadState();
 let editingId = null;
+let history = [];
+let historyIndex = -1;
 
 const els = {
   form: document.querySelector("#transactionForm"),
@@ -58,6 +62,7 @@ const els = {
   month: document.querySelector("#monthInput"),
   monthlyIncomeInput: document.querySelector("#monthlyIncomeInput"),
   saveIncomeBtn: document.querySelector("#saveIncomeBtn"),
+  editIncomeBtn: document.querySelector("#editIncomeBtn"),
   currentMonthLabel: document.querySelector("#currentMonthLabel"),
   search: document.querySelector("#searchInput"),
   typeFilter: document.querySelector("#typeFilter"),
@@ -68,6 +73,7 @@ const els = {
   recurringList: document.querySelector("#recurringList"),
   insightsList: document.querySelector("#insightsList"),
   chart: document.querySelector("#trendChart"),
+  pieChart: document.querySelector("#pieChart"),
   seedDemo: document.querySelector("#seedDemoBtn"),
   exportBtn: document.querySelector("#exportBtn"),
   importInput: document.querySelector("#importInput"),
@@ -82,7 +88,11 @@ const els = {
   goalProgressLabel: document.querySelector("#goalProgressLabel"),
   goalProgressBar: document.querySelector("#goalProgressBar"),
   goalNote: document.querySelector("#goalNote"),
-  emptyTemplate: document.querySelector("#emptyStateTemplate")
+  emptyTemplate: document.querySelector("#emptyStateTemplate"),
+  themeToggle: document.querySelector("#themeToggle"),
+  undoBtn: document.querySelector("#undoBtn"),
+  redoBtn: document.querySelector("#redoBtn"),
+  notificationContainer: document.querySelector("#notificationContainer")
 };
 
 function loadState() {
@@ -91,7 +101,9 @@ function loadState() {
     return {
       transactions: demoTransactions,
       budgets: defaultBudgets,
-      monthlyIncome: 0
+      monthlyIncome: 0,
+      goals: [],
+      customCategories: { expense: [], income: [] }
     };
   }
 
@@ -100,19 +112,28 @@ function loadState() {
     return {
       transactions: Array.isArray(parsed.transactions) ? parsed.transactions : demoTransactions,
       budgets: parsed.budgets || defaultBudgets,
-      monthlyIncome: Number(parsed.monthlyIncome) || 0
+      monthlyIncome: Number(parsed.monthlyIncome) || 0,
+      goals: parsed.goals || [],
+      customCategories: parsed.customCategories || { expense: [], income: [] }
     };
   } catch {
     return {
       transactions: demoTransactions,
       budgets: defaultBudgets,
-      monthlyIncome: 0
+      monthlyIncome: 0,
+      goals: [],
+      customCategories: { expense: [], income: [] }
     };
   }
 }
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  // Save to history for undo/redo
+  history = history.slice(0, historyIndex + 1);
+  history.push(JSON.stringify(state));
+  historyIndex = history.length - 1;
+  updateUndoRedoButtons();
 }
 
 function formatCurrency(value) {
@@ -157,16 +178,68 @@ function groupByCategory(transactions) {
   }, {});
 }
 
+function showNotification(message, type = "success") {
+  const notification = document.createElement("div");
+  notification.className = `notification notification-${type}`;
+  notification.textContent = message;
+  els.notificationContainer.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.classList.add("show");
+  }, 10);
+  
+  setTimeout(() => {
+    notification.classList.remove("show");
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const currentTheme = html.getAttribute("data-theme");
+  const newTheme = currentTheme === "dark" ? "light" : "dark";
+  html.setAttribute("data-theme", newTheme);
+  localStorage.setItem(THEME_KEY, newTheme);
+  els.themeToggle.textContent = newTheme === "dark" ? "☀️" : "🌙";
+}
+
+function initTheme() {
+  const savedTheme = localStorage.getItem(THEME_KEY) || "light";
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  els.themeToggle.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+}
+
+function updateUndoRedoButtons() {
+  els.undoBtn.disabled = historyIndex <= 0;
+  els.redoBtn.disabled = historyIndex >= history.length - 1;
+}
+
+function undo() {
+  if (historyIndex > 0) {
+    historyIndex--;
+    state = JSON.parse(history[historyIndex]);
+    renderAll();
+    showNotification("Action undone", "info");
+    updateUndoRedoButtons();
+  }
+}
+
+function redo() {
+  if (historyIndex < history.length - 1) {
+    historyIndex++;
+    state = JSON.parse(history[historyIndex]);
+    renderAll();
+    showNotification("Action redone", "info");
+    updateUndoRedoButtons();
+  }
+}
+
 function populateCategoryOptions() {
   const selectedType = els.type.value;
-  els.category.innerHTML = categories[selectedType]
+  const allCategories = [...categories[selectedType], ...state.customCategories[selectedType]];
+  els.category.innerHTML = allCategories
     .map((category) => `<option value="${category}">${category}</option>`)
     .join("");
-
-  const allCategories = [...new Set([...categories.expense, ...categories.income])].sort();
-  els.categoryFilter.innerHTML = `<option value="all">All categories</option>${allCategories
-    .map((category) => `<option value="${category}">${category}</option>`)
-    .join("")}`;
 }
 
 function populateMonths() {
@@ -202,7 +275,6 @@ function renderStats() {
   const income = sumTransactions(monthTransactions, "income");
   const expenses = sumTransactions(monthTransactions, "expense");
   
-  // Include set monthly income in total balance
   const totalIncome = state.monthlyIncome > 0 ? allIncome + state.monthlyIncome : allIncome;
   const balance = totalIncome - allExpenses;
   const savings = income - expenses;
@@ -235,6 +307,22 @@ function renderStats() {
     els.goalNote.textContent = `${formatCurrency(Math.max(savings, 0))} saved. Target: ${formatCurrency(state.monthlyIncome)}`;
   } else {
     els.goalNote.textContent = "Set your monthly income to track savings progress.";
+  }
+
+  // Check and show spending alerts
+  checkSpendingAlerts(expenses);
+}
+
+function checkSpendingAlerts(expenses) {
+  if (state.monthlyIncome > 0) {
+    const spentPercentage = (expenses / state.monthlyIncome) * 100;
+    if (spentPercentage >= 100) {
+      showNotification("⚠️ Budget exceeded! You've spent 100% of your income.", "warning");
+    } else if (spentPercentage >= 90) {
+      showNotification("⚠️ Alert: You've spent 90% of your income.", "warning");
+    } else if (spentPercentage >= 75) {
+      showNotification("ℹ️ Info: You've spent 75% of your income.", "info");
+    }
   }
 }
 
@@ -410,12 +498,12 @@ function renderChart() {
   const maxValue = Math.max(1000, ...data.flatMap((item) => [item.income, item.expense]));
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#fbfcf8";
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg');
   ctx.fillRect(0, 0, width, height);
 
-  ctx.strokeStyle = "#dfe3dc";
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--line');
   ctx.lineWidth = 1;
-  ctx.fillStyle = "#6b6f76";
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
   ctx.font = "12px Inter, system-ui, sans-serif";
 
   for (let i = 0; i <= 4; i += 1) {
@@ -429,7 +517,7 @@ function renderChart() {
   }
 
   if (!data.length) {
-    ctx.fillStyle = "#6b6f76";
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
     ctx.textAlign = "center";
     ctx.fillText("Add transactions to draw trends", width / 2, height / 2);
     ctx.textAlign = "left";
@@ -450,7 +538,7 @@ function renderChart() {
     ctx.fillStyle = "#d95d39";
     ctx.fillRect(x + 3, baseY - expenseHeight, barWidth, expenseHeight);
 
-    ctx.fillStyle = "#44484f";
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ink');
     ctx.textAlign = "center";
     ctx.fillText(item.month.slice(5), x, height - 16);
   });
@@ -460,10 +548,90 @@ function renderChart() {
   drawLegend(ctx, width - 92, 18, "#d95d39", "Expense");
 }
 
+function renderPieChart() {
+  const canvas = els.pieChart;
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  const month = getSelectedMonth();
+  const monthTransactions = transactionsForMonth(month);
+  const expenses = monthTransactions.filter((transaction) => transaction.type === "expense");
+  const byCategory = groupByCategory(expenses);
+  
+  const pixelRatio = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.max(1, Math.floor(rect.width * pixelRatio));
+  canvas.height = Math.max(1, Math.floor(rect.height * pixelRatio));
+  ctx.scale(pixelRatio, pixelRatio);
+
+  const width = rect.width;
+  const height = rect.height;
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = Math.min(width, height) / 2.5;
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg');
+  ctx.fillRect(0, 0, width, height);
+
+  const categories = Object.entries(byCategory);
+  if (!categories.length) {
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+    ctx.textAlign = "center";
+    ctx.font = "14px Inter, system-ui, sans-serif";
+    ctx.fillText("No expenses in this month", centerX, centerY);
+    return;
+  }
+
+  const total = categories.reduce((sum, [, amount]) => sum + amount, 0);
+  const colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E2"];
+
+  let currentAngle = -Math.PI / 2;
+  categories.forEach(([category, amount], index) => {
+    const sliceAngle = (amount / total) * 2 * Math.PI;
+    
+    // Draw pie slice
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+    ctx.lineTo(centerX, centerY);
+    ctx.fillStyle = colors[index % colors.length];
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Draw label
+    const labelAngle = currentAngle + sliceAngle / 2;
+    const labelX = centerX + Math.cos(labelAngle) * (radius * 0.7);
+    const labelY = centerY + Math.sin(labelAngle) * (radius * 0.7);
+    
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 12px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`${Math.round((amount / total) * 100)}%`, labelX, labelY);
+
+    currentAngle += sliceAngle;
+  });
+
+  // Draw legend
+  let legendY = 20;
+  categories.forEach(([category, amount], index) => {
+    ctx.fillStyle = colors[index % colors.length];
+    ctx.fillRect(width - 160, legendY, 12, 12);
+    
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ink');
+    ctx.font = "12px Inter, system-ui, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(`${category}: ${formatCurrency(amount)}`, width - 140, legendY + 10);
+    
+    legendY += 18;
+  });
+}
+
 function drawLegend(ctx, x, y, color, label) {
   ctx.fillStyle = color;
   ctx.fillRect(x, y, 10, 10);
-  ctx.fillStyle = "#44484f";
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ink');
   ctx.font = "12px Inter, system-ui, sans-serif";
   ctx.fillText(label, x + 15, y + 9);
 }
@@ -487,10 +655,26 @@ function escapeHtml(value) {
 
 function addOrUpdateTransaction(event) {
   event.preventDefault();
+  
+  // Validate amount
+  const amount = Number(els.amount.value);
+  if (amount <= 0) {
+    showNotification("❌ Amount must be greater than 0", "error");
+    return;
+  }
+
+  // Validate date
+  const selectedDate = new Date(els.date.value);
+  const today = new Date();
+  if (selectedDate > today) {
+    showNotification("❌ Future dates are not allowed", "error");
+    return;
+  }
+
   const transaction = {
     id: editingId || crypto.randomUUID(),
     title: els.title.value.trim(),
-    amount: Number(els.amount.value),
+    amount: amount,
     type: els.type.value,
     category: els.category.value,
     account: els.account.value,
@@ -499,13 +683,16 @@ function addOrUpdateTransaction(event) {
   };
 
   if (!transaction.title || !transaction.amount || !transaction.date) {
+    showNotification("❌ Please fill all required fields", "error");
     return;
   }
 
   if (editingId) {
     state.transactions = state.transactions.map((item) => item.id === editingId ? transaction : item);
+    showNotification("✅ Transaction updated successfully", "success");
   } else {
     state.transactions.push(transaction);
+    showNotification("✅ Transaction added successfully", "success");
   }
 
   saveState();
@@ -515,9 +702,13 @@ function addOrUpdateTransaction(event) {
 }
 
 function deleteTransaction(id) {
-  state.transactions = state.transactions.filter((transaction) => transaction.id !== id);
-  saveState();
-  renderAll();
+  const confirmed = confirm("Are you sure you want to delete this transaction?");
+  if (confirmed) {
+    state.transactions = state.transactions.filter((transaction) => transaction.id !== id);
+    saveState();
+    showNotification("✅ Transaction deleted successfully", "success");
+    renderAll();
+  }
 }
 
 function editTransaction(id) {
@@ -542,10 +733,35 @@ function editTransaction(id) {
 
 function saveMonthlyIncome() {
   const income = Number(els.monthlyIncomeInput.value);
-  if (income >= 0) {
+  
+  if (isNaN(income) || income < 0) {
+    showNotification("❌ Please enter a valid income amount", "error");
+    return;
+  }
+
+  if (income === 0) {
+    showNotification("❌ Income must be greater than 0", "error");
+    return;
+  }
+
+  state.monthlyIncome = income;
+  saveState();
+  els.monthlyIncomeInput.value = "";
+  showNotification("✅ Monthly income saved successfully", "success");
+  renderAll();
+}
+
+function editMonthlyIncome() {
+  const newIncome = prompt("Enter new monthly income:", state.monthlyIncome);
+  if (newIncome !== null && newIncome.trim() !== "") {
+    const income = Number(newIncome);
+    if (isNaN(income) || income < 0) {
+      showNotification("❌ Please enter a valid income amount", "error");
+      return;
+    }
     state.monthlyIncome = income;
     saveState();
-    els.monthlyIncomeInput.value = "";
+    showNotification("✅ Monthly income updated successfully", "success");
     renderAll();
   }
 }
@@ -558,6 +774,7 @@ function exportState() {
   link.download = `expense-app-export-${new Date().toISOString().slice(0, 10)}.json`;
   link.click();
   URL.revokeObjectURL(url);
+  showNotification("✅ Data exported successfully", "success");
 }
 
 function importState(file) {
@@ -571,12 +788,15 @@ function importState(file) {
       state = {
         transactions: parsed.transactions,
         budgets: parsed.budgets || defaultBudgets,
-        monthlyIncome: Number(parsed.monthlyIncome) || 0
+        monthlyIncome: Number(parsed.monthlyIncome) || 0,
+        goals: parsed.goals || [],
+        customCategories: parsed.customCategories || { expense: [], income: [] }
       };
       saveState();
+      showNotification("✅ Data imported successfully", "success");
       renderAll();
     } catch {
-      alert("That file does not look like a valid Expense App export.");
+      showNotification("❌ Invalid file format", "error");
     }
   };
   reader.readAsText(file);
@@ -611,6 +831,7 @@ function renderAll() {
   renderRecurring();
   renderInsights();
   renderChart();
+  renderPieChart();
 }
 
 function bindEvents() {
@@ -627,18 +848,27 @@ function bindEvents() {
       saveMonthlyIncome();
     }
   });
+  if (els.editIncomeBtn) {
+    els.editIncomeBtn.addEventListener("click", editMonthlyIncome);
+  }
   els.search.addEventListener("input", renderTransactions);
   els.typeFilter.addEventListener("change", renderTransactions);
   els.categoryFilter.addEventListener("change", renderTransactions);
   els.seedDemo.addEventListener("click", () => {
-    state = {
-      transactions: demoTransactions.map((transaction) => ({ ...transaction, id: crypto.randomUUID() })),
-      budgets: defaultBudgets,
-      monthlyIncome: 50000
-    };
-    saveState();
-    els.monthlyIncomeInput.value = state.monthlyIncome;
-    renderAll();
+    const confirmed = confirm("Load demo data? This will replace current data.");
+    if (confirmed) {
+      state = {
+        transactions: demoTransactions.map((transaction) => ({ ...transaction, id: crypto.randomUUID() })),
+        budgets: defaultBudgets,
+        monthlyIncome: 50000,
+        goals: [],
+        customCategories: { expense: [], income: [] }
+      };
+      saveState();
+      els.monthlyIncomeInput.value = state.monthlyIncome;
+      showNotification("✅ Demo data loaded successfully", "success");
+      renderAll();
+    }
   });
   els.exportBtn.addEventListener("click", exportState);
   els.importInput.addEventListener("change", (event) => {
@@ -669,6 +899,37 @@ function bindEvents() {
     }
   });
 
+  if (els.themeToggle) {
+    els.themeToggle.addEventListener("click", toggleTheme);
+  }
+
+  if (els.undoBtn) {
+    els.undoBtn.addEventListener("click", undo);
+  }
+
+  if (els.redoBtn) {
+    els.redoBtn.addEventListener("click", redo);
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+      e.preventDefault();
+      undo();
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.shiftKey && e.key === "Z"))) {
+      e.preventDefault();
+      redo();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "n") {
+      e.preventDefault();
+      navigateToPage("add-transaction");
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+      e.preventDefault();
+      exportState();
+    }
+  });
+
   document.querySelectorAll(".nav-list a").forEach((link) => {
     link.addEventListener("click", (e) => {
       e.preventDefault();
@@ -677,11 +938,16 @@ function bindEvents() {
     });
   });
 
-  window.addEventListener("resize", renderChart);
+  window.addEventListener("resize", () => {
+    renderChart();
+    renderPieChart();
+  });
 
   navigateToPage("dashboard");
 }
 
+// Initialize
+initTheme();
 populateCategoryOptions();
 resetForm();
 bindEvents();
