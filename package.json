@@ -1,0 +1,13 @@
+{
+  "name": "expense-app",
+  "version": "1.0.0",
+  "description": "Smart Expense Tracker - A vanilla HTML/CSS/JS expense tracking application",
+  "main": "index.html",
+  "scripts": {
+    "start": "echo 'Open index.html in your browser'",
+    "build": "echo 'No build step needed - static site'"
+  },
+  "keywords": ["expense", "tracker", "finance"],
+  "author": "",
+  "license": "MIT"
+}
